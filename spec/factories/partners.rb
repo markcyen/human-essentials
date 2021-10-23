@@ -28,15 +28,22 @@ FactoryBot.define do
 
     trait :uninvited do
       status { :uninvited }
+
+      transient do
+        without_partner_users { true }
+      end
     end
 
     trait :awaiting_review do
       status { :awaiting_review }
     end
 
-    after(:create) do |partner, _evaluator|
+    after(:create) do |partner, evaluator|
       # Create associated records on partnerbase DB
       partners_partner = create(:partners_partner, diaper_bank_id: partner.organization_id, diaper_partner_id: partner.id, name: partner.name)
+
+      next if evaluator.try(:without_partner_users)
+
       Partners::User.create!(
         email: partner.email,
         partner: partners_partner,
